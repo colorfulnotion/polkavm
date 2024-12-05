@@ -1,0 +1,86 @@
+// RO data = 0/0 bytes
+// RW data = 0/0 bytes
+// Stack size = 8192 bytes
+// Jump table entry point size = 0 bytes
+// RO data = []
+// RW data = []
+// Instructions = 65
+// Code size = 182 bytes
+
+      :                          @0
+     0: 28 12 00 00 00           jump @4
+      :                          @1
+     5: 28 11 00 00 00           jump @5
+      :                          @2
+    10: 28 7a 00 00 00           jump @10
+      :                          @3
+    15: 28 a3 00                 jump @11
+      :                          @4 [export #0: 'is_authorized']
+    18: 33 07                    a0 = 0x0
+    20: 32 00                    ret
+      :                          @5 [export #1: 'refine']
+    22: 8b 11 d8                 i64 sp = i64 sp - i64 40
+    25: 71 10 20                 u64 [sp + 32] = ra
+    28: 71 15 18                 u64 [sp + 24] = s0
+    31: 71 16 10                 u64 [sp + 16] = s1
+    34: 48 11 08                 u32 [sp + 8] = 0
+    37: 49 01                    u64 [sp + 0] = 0
+    39: 64 18                    a1 = sp
+    41: 33 09 0c                 a2 = 0xc
+    44: 33 07                    a0 = 0x0
+    46: 0a 10                    ecalli 16 // 'import'
+    48: 01                       fallthrough
+      :                          @6
+    49: 79 77                    a0 = a0 + 0x0
+    51: 51 07 11                 jump @8 if a0 == 0
+      :                          @7
+    54: 48 11 08                 u32 [sp + 8] = 0
+    57: 48 11 04                 u32 [sp + 4] = 0
+    60: 33 07 01                 a0 = 0x1
+    63: 33 08 01                 a1 = 0x1
+    66: 28 1d                    jump @9
+      :                          @8
+    68: 75 19 02                 a2 = i16 [sp + 2]
+    71: 75 1a 04                 a3 = i16 [sp + 4]
+    74: 75 18 06                 a1 = i16 [sp + 6]
+    77: 75 17                    a0 = i16 [sp]
+    79: b4 9a 0b                 i64 a4 = a3 + a2
+    82: b4 b8 08                 i64 a1 = a1 + a4
+    85: 8b 77 01                 i64 a0 = i64 a0 + 0x1
+    88: 6f 19 04                 u16 [sp + 4] = a2
+    91: 6f 1a 06                 u16 [sp + 6] = a3
+    94: 01                       fallthrough
+      :                          @9
+    95: 6f 17                    u16 [sp] = a0
+    97: 6f 18 02                 u16 [sp + 2] = a1
+   100: 64 15                    s0 = sp
+   102: 33 06 0c                 s1 = 0xc
+   105: 64 17                    a0 = sp
+   107: 33 08 0c                 a1 = 0xc
+   110: 0a 11                    ecalli 17 // 'export'
+   112: 64 5a                    a3 = s0
+   114: 64 6b                    a4 = s1
+   116: 33 07                    a0 = 0x0
+   118: 78 10 20                 ra = u64 [sp + 32]
+   121: 78 15 18                 s0 = u64 [sp + 24]
+   124: 78 16 10                 s1 = u64 [sp + 16]
+   127: 8b 11 28                 i64 sp = i64 sp + 0x28
+   130: 32 00                    ret
+      :                          @10 [export #2: 'accumulate']
+   132: 8b 11 f0                 i64 sp = i64 sp - i64 16
+   135: 71 10 08                 u64 [sp + 8] = ra
+   138: 46 11 07                 u8 [sp + 7] = 0
+   141: 8b 17 07                 i64 a0 = i64 sp + 0x7
+   144: 8d 77 20                 a0 = a0 <<64 32
+   147: 8e 77 20                 a0 = a0 >>64 32
+   150: 14 09 00 00 ff fe 00 00 00 00 a2 = 0xfeff0000
+   160: 33 08 01                 a1 = 0x1
+   163: 33 0a 0c                 a3 = 0xc
+   166: 0a 03                    ecalli 3 // 'write'
+   168: 33 07                    a0 = 0x0
+   170: 78 10 08                 ra = u64 [sp + 8]
+   173: 8b 11 10                 i64 sp = i64 sp + 0x10
+   176: 32 00                    ret
+      :                          @11 [export #3: 'on_transfer']
+   178: 33 07                    a0 = 0x0
+   180: 32 00                    ret
