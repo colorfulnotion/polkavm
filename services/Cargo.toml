@@ -18,6 +18,5 @@ members = [
     "sp1verifier",
     "tribonacci",
     "megatron"
-
  #   "tokens",
-]
+, "xor"]
