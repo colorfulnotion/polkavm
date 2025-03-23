@@ -66,7 +66,9 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
     let num_payload = wi_payload_length / 8;
     let mut child_vm_ids = [0u32; 16];
     let num_child_vm = num_payload - 1;
-    call_log(2, None, &format!("wi_payload_length={:?} num_payload={:?} num_child_vm={:?}", wi_payload_length, num_payload, num_child_vm));
+    let mut gas_result = unsafe { gas() };
+
+    call_log(2, None, &format!("num_child_vm={:?} gas_result={:?}", num_child_vm, gas_result));
 
     let payload = unsafe { core::slice::from_raw_parts(wi_payload_start_address as *const u8, wi_payload_length as usize) };
     for i in 0..num_child_vm {
@@ -141,7 +143,8 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
             let invoke_result = unsafe {
                 invoke(child_vm_id as u64, g_w_address);
             };
-            call_log(2, None, &format!("invoke i={:?} invoke_result={:?}", i, invoke_result));
+            gas_result = unsafe { gas() };
+            call_log(2, None, &format!("invoke i={:?} invoke_result={:?} gas={:?}", i, invoke_result, gas_result));
 
             let result_buffer_data_address = unsafe { result_buffer.as_mut_ptr().add(8) };
             let (_, new_child_vm_registers) = deserialize_gas_and_registers(&g_w);
@@ -150,7 +153,8 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
             let peek_result = unsafe {
                 peek(child_vm_id as u64, result_buffer_data_address as u64, output_address, PAGE_SIZE);
             };
-            call_log(2, None, &format!("peek i={:?}, expect OK {:?}, got {:?}", i, OK, peek_result));
+            gas_result = unsafe { gas() };
+            call_log(2, None, &format!("peek i={:?}, expect OK {:?}, got {:?} gas={:?}", i, OK, peek_result, gas_result));
 
             result_buffer[0..4].copy_from_slice(&child_vm_id.to_le_bytes());
             result_buffer[4..8].copy_from_slice(&FIRST_READABLE_PAGE.to_le_bytes());
@@ -162,7 +166,9 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
         let export_result = unsafe {
             export(result_buffer.as_ptr() as u64, SEGMENT_SIZE);
         };
-        call_log(2, None, &format!("export i={:?}: expect OK {:?}, got {:?}", i, OK, export_result));
+
+        gas_result = unsafe { gas() };
+        call_log(2, None, &format!("export i={:?}: expect OK {:?}, got {:?} gas={:?}", i, OK, export_result, gas_result));
     }
 
     for i in 0..num_child_vm {
@@ -170,29 +176,9 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
         let expunge_result = unsafe {
             expunge(child_vm_id as u64);
         };
-        call_log(2, None, &format!("expunge i={:?}: expect OK {:?}, got {:?}", i, OK, expunge_result));
+        gas_result = unsafe { gas() };
+        call_log(2, None, &format!("expunge i={:?}: expect OK {:?}, got {:?} gas={:?}", i, OK, expunge_result, gas_result));
     }
-
-    // let parent_payload_index = num_payload - 1;
-    // let parent_payload = &payload[(parent_payload_index * 8) as usize..((parent_payload_index + 1) * 8) as usize];
-    // let _parent_n = u32::from_le_bytes(parent_payload[0..4].try_into().unwrap());
-    // let parent_f = u32::from_le_bytes(parent_payload[4..8].try_into().unwrap());
-
-    // let mut sum: u32 = 0;
-    // for i in 0..num_child_vm {
-    //     let child_vm_id = child_vm_ids[i as usize];
-    //     if parent_f == 16 {
-    //         buffer_0 = get_page(child_vm_id, 0);
-    //         let mut bytes = [0u8; 4];
-    //         bytes.copy_from_slice(&buffer_0[8..12]);
-    //         sum = sum.wrapping_add(u32::from_le_bytes(bytes));
-    //     } else if parent_f == 17 {
-    //         buffer_0 = get_page(child_vm_id, 0);
-    //         let mut bytes = [0u8; 4];
-    //         bytes.copy_from_slice(&buffer_0[8..12]);
-    //         sum = sum.wrapping_mul(u32::from_le_bytes(bytes));
-    //     }
-    // }
 
     (output_12_bytes_address, output_12_bytes_length)
 }
