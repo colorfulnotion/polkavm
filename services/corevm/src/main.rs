@@ -8,8 +8,8 @@ use alloc::format;
 use polkavm_derive::min_stack_size;
 min_stack_size!(40960); // depends on how many pages you need
 
-use utils::constants::{FIRST_READABLE_ADDRESS, INPUT_ARGS_PAGE, PAGE_SIZE, SEGMENT_SIZE}; 
-use utils::constants::{NONE, CORE, OK, WHO, HUH, HALT, HOST, LOG}; 
+use utils::constants::{FIRST_READABLE_ADDRESS, INPUT_ARGS_PAGE, PAGE_SIZE, SEGMENT_SIZE};
+use utils::constants::{NONE, CORE, OK, WHO, HUH, HALT, HOST, LOG};
 
 use utils::functions::{write_result, call_log};
 use utils::functions::{initialize_pvm_registers, serialize_gas_and_registers, deserialize_gas_and_registers};
@@ -100,7 +100,7 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
         w_bytes_length,
         new_machine_idx as u32,
     );
- 
+
     // fetch segments, poke child VM
     let mut segment_buf = [0u8; SEGMENT_SIZE as usize];
     let mut segment_index = 0u64;
@@ -118,7 +118,7 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
             u32::from_le_bytes(segment_buf[0..4].try_into().unwrap()) as u64,
             u32::from_le_bytes(segment_buf[4..8].try_into().unwrap()) as u64,
         );
-        
+
         let zero_result = unsafe { zero(m, page_id, 1) };
         call_log(2, None, &format!("zero m={:?}, page_id={:?} zero_result={:?}",  m, page_id, zero_result));
 
@@ -127,7 +127,7 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
         let page_address = page_id * PAGE_SIZE as u64;
         let poke_result = unsafe { poke(m, segment_buf_page_address, page_address, PAGE_SIZE) };
         call_log(2, None, &format!("poke m={:?} s={:?} o={:?} z={:?} poke_result={:?}", m, s, page_address, PAGE_SIZE, poke_result));
-        
+
         segment_index += 1;
     }
 
@@ -215,7 +215,6 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
         let export_result = unsafe {
             export(segment_buf.as_ptr() as u64, SEGMENT_SIZE);
         };
-        call_log(2, None, "fooF");
         gas_result = unsafe { gas() };
         call_log(2, None, &format!("export i={:?}: expect OK {:?}, got {:?} gas={:?} output={:?}", i, OK, export_result, gas_result, output_bytes[0]));
     }
@@ -325,7 +324,7 @@ extern "C" fn accumulate(start_address: u64, length: u64) -> (u64, u64) {
         write_result(solicit_result, 1);
 
         let query_jamhash_result = unsafe { query(jam_hash_address, jam_length) };
-        call_log(2, None, &format!("query hash(jam): expect OK {:?}, got {:?} (recorded at key 2)", OK, query_jamhash_result));
+        call_log(2, None, &format!("query hash(jam): expect non-ZERO, got {:?} (recorded at key 2)", query_jamhash_result));
         write_result(query_jamhash_result, 2);
 
         let query_none_result = unsafe { query(dot_hash_address, dot_length) };
@@ -337,7 +336,7 @@ extern "C" fn accumulate(start_address: u64, length: u64) -> (u64, u64) {
         write_result(forget_result, 1);
 
         let query_jamhash_result = unsafe { query(jam_hash_address, jam_length) };
-        call_log(2, None, &format!("query hash(jam): expect OK {:?} 2+2^32*x, got {:?} (recorded at key 2)", OK, forget_result));
+        call_log(2, None, &format!("query hash(jam): expect non-zero, got {:?} (recorded at key 2)", query_jamhash_result));
         write_result(query_jamhash_result, 2);
 
         let lookup_none_result = unsafe { lookup(service_index as u64, dot_hash_address, buffer_address, 0, dot_length) };
@@ -452,7 +451,7 @@ extern "C" fn accumulate(start_address: u64, length: u64) -> (u64, u64) {
 
     let gas_result = unsafe { gas() };
     write_result(gas_result, 9);
-    call_log(2, None, &format!("gas: expect OK {:?}, got {:?} (recorded at key 9)", OK, gas_result));
+    call_log(2, None, &format!("gas: got {:?} (recorded at key 9)", gas_result));
 
     let mut output_bytes_32 = [0u8; 32];
     output_bytes_32[..work_result_length as usize]
