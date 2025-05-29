@@ -144,6 +144,8 @@ pub fn parse_accumulate_args(start_address: u64, length: u64, m: u64) -> Option<
 
     let mut args = AccumulateArgs::default();
 
+    call_log(2, None, &format!("parse_accumulate_args start_address={} length={}", start_address, length));
+
     // Create a slice of the available data to parse t
     let t_full_slice = unsafe { core::slice::from_raw_parts(current_address as *const u8, remaining_length as usize) };
     let t_len = extract_discriminator(t_full_slice) as u64;

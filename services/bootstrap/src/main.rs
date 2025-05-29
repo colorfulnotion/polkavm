@@ -18,7 +18,7 @@ use simplealloc::SimpleAlloc;
 static ALLOCATOR: SimpleAlloc<SIZE1> = SimpleAlloc::new();
 
 use utils::constants::FIRST_READABLE_ADDRESS;
-use utils::functions::{parse_accumulate_args, parse_refine_args};
+use utils::functions::{parse_accumulate_args, parse_refine_args, call_log};
 use utils::host_functions::{new, transfer, write};
 
 #[polkavm_derive::polkavm_export]
@@ -48,6 +48,7 @@ extern "C" fn accumulate(start_address: u64, length: u64) -> (u64, u64) {
         } else {
             return (FIRST_READABLE_ADDRESS as u64, 0);
         };
+    call_log(2, None, &format!("BOOTSTRAP INIT t={} s={}", _timeslot, _service_index));
 
     // Work result here should contain 32 bytes hash and 4 bytes code length
     let code_length_address: u64 = work_result_address + work_result_length - 4;
@@ -81,6 +82,7 @@ extern "C" fn accumulate(start_address: u64, length: u64) -> (u64, u64) {
         OUTPUT_BUFFER[..result_bytes.len()].copy_from_slice(&result_bytes);
         let output_bytes_address: u64 = OUTPUT_BUFFER.as_ptr() as u64;
         let output_bytes_length: u64 = OUTPUT_BUFFER.len() as u64;
+	call_log(2, None, &format!("RETURN acc output_bytes_address {} len {}", output_bytes_address, output_bytes_length));
         return (output_bytes_address, output_bytes_length);
     }
 }
