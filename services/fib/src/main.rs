@@ -48,7 +48,8 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
 
     let offset: u64 = 0;
     let maxlen: u64 = unsafe { buffer.len() as u64 };
-    let result = unsafe { fetch(buffer.as_mut_ptr() as u64, offset, maxlen, 5, 0, 0) }; // fetch segment 0 from work item 0
+/*
+let result = unsafe { fetch(buffer.as_mut_ptr() as u64, offset, maxlen, 5, 0, 0) }; // fetch segment 0 from work item 0
 
     if result != NONE {
         let n = unsafe { u32::from_le_bytes(buffer[0..4].try_into().unwrap()) };
@@ -62,15 +63,14 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
             buffer[8..12].copy_from_slice(&fib_n.to_le_bytes());
         }
     } else {
-        /*
+
         unsafe {
             buffer[0..4].copy_from_slice(&1_u32.to_le_bytes());
             buffer[4..8].copy_from_slice(&1_u32.to_le_bytes());
             buffer[8..12].copy_from_slice(&0_u32.to_le_bytes());
         }
-    	*/
     }
-
+*/
     unsafe {
         export(buffer.as_ptr() as u64, buffer.len() as u64);
     }
