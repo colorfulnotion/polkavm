@@ -42,6 +42,7 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
 
 #[no_mangle]
 static mut output_bytes_36: [u8; 36] = [0; 36];
+static mut operand: [u8; 4104] = [0; 4104];
 
 #[polkavm_derive::polkavm_export]
 extern "C" fn accumulate(start_address: u64, length: u64) -> (u64, u64) {
@@ -52,10 +53,18 @@ extern "C" fn accumulate(start_address: u64, length: u64) -> (u64, u64) {
         return (FIRST_READABLE_ADDRESS as u64, 0);
     };
 
-    let ptr = output_bytes_36.as_ptr() as u64;
+    let operand_ptr = unsafe { operand.as_ptr() as u64 };
+    let ptr = unsafe { output_bytes_36.as_ptr() as u64 };
 
     for i in 0..number_of_operands {
-        let result0 = unsafe { fetch(ptr, 0, 36, 15, i.into(), 0) };
+        let operand_len = unsafe { fetch(operand_ptr, 0, 4104, 15, i.into(), 0) };
+        // copy the last 36 bytes of the operand to output_bytes_36
+        unsafe {
+            let src_base_ptr = operand_ptr as *const u8;
+            let src_ptr = src_base_ptr.add(operand_len as usize - 36);
+            let dst_ptr = output_bytes_36.as_mut_ptr();
+            core::ptr::copy_nonoverlapping(src_ptr, dst_ptr, 36);
+        }
         // len is the 32..36 of the output_bytes_36 which is output by refine result  
         let len: u32 = unsafe {
             u32::from_le_bytes(
@@ -65,7 +74,9 @@ extern "C" fn accumulate(start_address: u64, length: u64) -> (u64, u64) {
             )
         };
        
-        call_log(2, None, &format!("createService output_bytes_address {} {:?}", ptr, output_bytes_36));
+        unsafe {
+            call_log(2, None, &format!("createService output_bytes_address {} {:x?} len={}", ptr, output_bytes_36, len));
+        } 
         let omega_9: u64 = 100;  // g
         let omega_10: u64 = 100;  // m
         let omega_11: u64 = 1024; // gratis f
@@ -89,7 +100,9 @@ extern "C" fn accumulate(start_address: u64, length: u64) -> (u64, u64) {
         }
         let start = (i * 4) as usize;
         let end = ((i + 1) * 4) as usize;
-        output_bytes_36[start..end].copy_from_slice(result_bytes);
+        unsafe {
+            output_bytes_36[start..end].copy_from_slice(result_bytes);
+        }
     }
     (ptr, 32)
 }
