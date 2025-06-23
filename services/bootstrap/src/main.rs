@@ -65,12 +65,12 @@ extern "C" fn accumulate(start_address: u64, length: u64) -> (u64, u64) {
             )
         };
        
-        call_log(2, None, &format!("createService output_bytes_address {} {:?}", ptr, buffer));
+        call_log(2, None, &format!("createService output_bytes_address {} {:?}", ptr, output_bytes_36));
         let omega_9: u64 = 100;  // g
         let omega_10: u64 = 100;  // m
         let omega_11: u64 = 1024; // gratis f
 
-        let result = unsafe { new(ptr, len, omega_9, omega_10, omega_11) };
+        let result = unsafe { new(ptr, len as u64, omega_9, omega_10, omega_11) };
         let result_bytes = &result.to_le_bytes()[..4];
         // write result to storage
         let storage_key: [u8; 4] = (i as u32).to_le_bytes();
@@ -89,7 +89,7 @@ extern "C" fn accumulate(start_address: u64, length: u64) -> (u64, u64) {
         }
         let start = (i * 4) as usize;
         let end = ((i + 1) * 4) as usize;
-        buffer[start..end].copy_from_slice(result_bytes);
+        output_bytes_36[start..end].copy_from_slice(result_bytes);
     }
     (ptr, 32)
 }
