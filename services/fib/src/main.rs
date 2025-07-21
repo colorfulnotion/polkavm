@@ -6305,7 +6305,6 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
     for idx in 0..=171 {
         run_program(idx as u8);
     }
-
     let sum: u32 = (1..=num_segments).sum();
     let sum_bytes = sum.to_le_bytes();
     unsafe {
@@ -6531,7 +6530,11 @@ extern "C" fn accumulate(start_address: u64, length: u64) -> (u64, u64) {
             write(key.as_ptr() as u64, key.len() as u64, ptr, 8);
         }
     }
-
+    /*
+    for idx in 0..=171 {
+        run_program(idx as u8);
+    }
+    */
     return (ptr, 32);
 }
 
