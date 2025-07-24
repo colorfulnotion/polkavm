@@ -6280,11 +6280,13 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
     call_log(2, None, &format!("PAYLOAD {} {}", payload_len, pairs));
     for i in 0..pairs {
         let program_id = payload[i * 2];
-        let count = payload[i * 2 + 1];
-        call_log(2, None, &format!("PROGRAM_ID {} COUNT {}", program_id, count));
+        let p_id = program_id % 170;
+        let count = payload[i * 2 + 1] as u64;
+	let iterations = count*count*count as u64;
+        call_log(2, None, &format!("PROGRAM_ID {} ITERATIONS {}", program_id, iterations));
         let mut gas_used = 0 as u64;
-        for _ in 0..count {
-            gas_used += run_program(program_id % 170);
+        for _ in 0..iterations {
+            gas_used += run_program(p_id);
         }
         // after the last run, grab your sum_bytes
         // only store up to 32 slots
@@ -6297,7 +6299,7 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
         call_log(
             2,
             None,
-            &format!("run_program {} trials {} gas_used {}", program_id, count, gas_used),
+            &format!("run_program {} ITERATIONS {} gas_used {}", program_id, iterations, gas_used),
         )
     }
 
