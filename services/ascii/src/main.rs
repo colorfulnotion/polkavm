@@ -150,7 +150,7 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
     let ascii_art = image_to_ascii(image_bytes, src_w as u32, src_h as u32, dst_w as u32, dst_h as u32);
 
     // Optionally log or export the ASCII art
-    call_log(1, None, "refine: ASCII art generated");
+    call_log(1, None, &format!("refine: ASCII art generated, length: {}, expected: {}", ascii_art.len(), dst_w * dst_h + dst_h));
     unsafe {
         export(ascii_art.as_ptr() as u64, ascii_art.len() as u64);
     }
