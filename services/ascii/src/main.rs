@@ -128,21 +128,11 @@ fn bytes_to_hex(data: &[u8]) -> String {
 }
 #[polkavm_derive::polkavm_export]
 extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
-    let (_wi_service_index, wi_payload_start_address, _wi_payload_length, _wphash) =
-        if let Some(args) = parse_refine_args(start_address, length) {
-            (
-                args.wi_service_index,
-                args.wi_payload_start_address,
-                args.wi_payload_length,
-                args.wphash,
-            )
-        } else {
-            return (FIRST_READABLE_ADDRESS as u64, 0);
-        };
+
     // todo : use payload to change the algorithm behavior
     let ptr: *mut u8 = core::ptr::null_mut();
 
-    let fetch_result = unsafe { fetch(ptr, 0, 2764800, 30, 0, 0) };
+    let fetch_result = unsafe { fetch(ptr as u64, 0, 2764800, 30, 0, 0) };
     if fetch_result == NONE {
         call_log(2, None, "refine: fetch failed");
         return (FIRST_READABLE_ADDRESS as u64, 0);
