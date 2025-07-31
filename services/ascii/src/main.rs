@@ -126,13 +126,14 @@ fn image_to_ascii(
 fn bytes_to_hex(data: &[u8]) -> String {
     data.iter().map(|b| format!("{:02x}", b)).collect()
 }
+static mut pic: [u8; 2764800] = [0u8; 2764800];
 #[polkavm_derive::polkavm_export]
 extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
 
     // todo : use payload to change the algorithm behavior
-    let ptr: *mut u8 = core::ptr::null_mut();
+    let ptr = unsafe { pic.as_ptr() as u64 };
 
-    let fetch_result = unsafe { fetch(ptr as u64, 0, 2764800, 30, 0, 0) };
+    let fetch_result = unsafe { fetch(ptr, 0, 2764800, 30, 0, 0) };
     if fetch_result == NONE {
         call_log(2, None, "refine: fetch failed");
         return (FIRST_READABLE_ADDRESS as u64, 0);
