@@ -34,5 +34,6 @@ members = [
     "hello_world",
     "utils",
     "mnist",
-    "ascii"
+    "ascii",
+    "ascii_loop"
 ]

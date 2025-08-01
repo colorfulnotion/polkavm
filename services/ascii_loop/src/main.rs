@@ -12,46 +12,15 @@ const SIZE0 : usize = 0x100000;
 use polkavm_derive::min_stack_size;
 min_stack_size!(SIZE0);
 
-const SIZE1 : usize = 0x100000;
+const SIZE1 : usize = 0x8000000;
 // allocate memory for heap
 use simplealloc::SimpleAlloc;
 #[global_allocator]
 static ALLOCATOR: SimpleAlloc<SIZE1> = SimpleAlloc::new();
 
 use utils::constants::{FIRST_READABLE_ADDRESS, FIRST_READABLE_PAGE, NONE, SEGMENT_SIZE};
-use utils::functions::{parse_accumulate_args, parse_refine_args, call_log};
+use utils::functions::{call_log};
 use utils::host_functions::{export, fetch};
-use utils::hash_functions::blake2b_hash;
-
-const PAGE_SIZE: usize = 4096;
-const PAGE_DIM: usize = 64;
-const NUM_PAGES: usize = 9;
-const PAGES_PER_ROW: usize = 3;
-const TOTAL_ROWS: usize = PAGE_DIM * 3;
-const TOTAL_COLS: usize = PAGE_DIM * 3;
-
-const TOTAL_BYTES: usize = PAGE_SIZE * NUM_PAGES;
-
-const ROWS_WITH_GHOST: usize = TOTAL_ROWS + 2;
-const COLS_WITH_GHOST: usize = TOTAL_COLS + 2;
-
-/* glider pattern (3×3):
-   row=0: [0,1,0]
-   row=1: [0,0,1]
-   row=2: [1,1,1]
-*/
-const GLIDER_PATTERN: [(usize, usize); 5] = [
-    (0, 1),
-    (1, 2),
-    (2, 0),
-    (2, 1),
-    (2, 2),
-];
-
-const H_SPACING: usize = 5;
-const V_SPACING: usize = 5;
-const MARGIN: usize = 2;
-const GLIDERS_PER_ROW: usize = (PAGE_DIM - MARGIN) / H_SPACING;
 fn encode_image(width: u16, height: u16, pixels: &[u8]) -> vec::Vec<u8> {
     let mut buf = vec::Vec::with_capacity(4 + pixels.len());
     buf.extend_from_slice(&width.to_be_bytes());
@@ -129,10 +98,10 @@ fn bytes_to_hex(data: &[u8]) -> String {
 static mut pic: [u8; 2764800] = [0u8; 2764800];
 #[polkavm_derive::polkavm_export]
 extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
-
+    call_log(1, None, &format!("refine: start_address: {:x}, length: {}", start_address, length));
     // todo : use payload to change the algorithm behavior
     let ptr = unsafe { pic.as_ptr() as u64 };
-
+    call_log(1, None, &format!("refine: start_address: {:x}, length: {}", start_address, length));
     let fetch_result = unsafe { fetch(ptr, 0, 2764800, 30, 0, 0) };
     if fetch_result == NONE {
         call_log(2, None, "refine: fetch failed");
@@ -146,7 +115,8 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
     let dst_h = 72;
 
     // Safety: fetch_result is a pointer to the image buffer
-    let ascii_art = image_to_ascii(ptr, src_w as u32, src_h as u32, dst_w as u32, dst_h as u32);
+    let image_bytes = unsafe { core::slice::from_raw_parts(ptr as *const u8, src_w * src_h * 3) };
+    let ascii_art = image_to_ascii(image_bytes, src_w as u32, src_h as u32, dst_w as u32, dst_h as u32);
     call_log(1, None, &format!("fetch_result: {:x}, first bytes: {:?}", fetch_result, &image_bytes[..16]));
     // Optionally log or export the ASCII art
     call_log(1, None, &format!("refine: ASCII art generated, length: {}, expected: {}", ascii_art.len(), dst_w * dst_h + dst_h));
