@@ -35,5 +35,7 @@ members = [
     "utils",
     "mnist",
     "ascii",
-    "ascii_loop"
+    "ascii_loop",
+    "wasm_exe",
+    "wasm_exe/wasm-snap"
 ]
