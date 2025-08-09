@@ -492,21 +492,21 @@ pub fn standard_program_initialization_for_child(
 
     let o_start_addreess = Z_Z;
     let o_start_page = Z_Z / PAGE_SIZE;
-    let zero_result = unsafe { zero(machine_index as u64, o_start_page, o_bytes_page_len) };
+    let zero_result = unsafe { pages(machine_index as u64, o_start_page, o_bytes_page_len,4) };
     if zero_result != OK {
         return call_log(2, None, "StandardProgramInitializationForChild: zero failed for o_bytes");
     }
 
     let w_start_address = 2 * Z_Z + z_func(o_bytes_length);
     let w_start_page = w_start_address / PAGE_SIZE;
-    let zero_result = unsafe { zero(machine_index as u64, w_start_page, w_bytes_page_len) };
+    let zero_result = unsafe { pages(machine_index as u64, w_start_page, w_bytes_page_len,4) };
     if zero_result != OK {
         return call_log(2, None, "StandardProgramInitializationForChild: zero failed for w_bytes");
     }
 
     let s_start_address = (1u64 << 32) - 2 * Z_Z - Z_I - p_func(s);
     let s_start_page = s_start_address / PAGE_SIZE;
-    let zero_result = unsafe { zero(machine_index as u64, s_start_page, stack_page_len) };
+    let zero_result = unsafe { pages(machine_index as u64, s_start_page, stack_page_len,4) };
     if zero_result != OK {
         return call_log(2, None, "StandardProgramInitializationForChild: zero failed for stack");
     }
@@ -537,8 +537,8 @@ pub fn setup_page(segment: &[u8]) {
     let page_address = page_id * PAGE_SIZE;
     let data = &segment[8..];
 
-    if unsafe { zero(m, page_id, 1) } != OK {
-        return call_log(0, None, "setup_page: zero failed");
+    if unsafe { pages(m, page_id, 1,4) } != OK {
+        return call_log(0, None, "setup_page: pages failed");
     }
 
     if unsafe { poke(m, data.as_ptr() as u64, page_address, PAGE_SIZE) } != OK {

@@ -23,10 +23,10 @@ use utils::constants::{NONE, HOST, LOG};
 use utils::functions::{call_log};
 use utils::functions::{initialize_pvm_registers, serialize_gas_and_registers, deserialize_gas_and_registers};
 use utils::functions::{parse_standard_program_initialization_args, standard_program_initialization_for_child};
-use utils::functions::{parse_accumulate_args, parse_refine_args};
+use utils::functions::{parse_accumulate_args,  parse_accumulate_operand_args, parse_refine_args};
 
 use utils::host_functions::{solicit};
-use utils::host_functions::{export, expunge, fetch, historical_lookup, invoke, machine, poke, peek, zero, log};
+use utils::host_functions::{export, expunge, fetch, historical_lookup, invoke, machine, poke, peek, pages, log};
 
 static mut extrinsic : [u8; 36] = [0u8; 36];
 
@@ -129,6 +129,7 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
     let mut page_id: u64;
     let mut first_page_address: u64 = 0;
     loop {
+        call_log(2, None, &format!("Parent: StartFetch"));
         let fetch_result = unsafe { fetch(segment_buf_segment_address as u64, 0, SEGMENT_SIZE as u64, 6, segment_index, 0) };
         if fetch_result == NONE {
             break;
@@ -143,8 +144,8 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
             first_page_address = page_id * PAGE_SIZE as u64;
         }
 
-        let zero_result = unsafe { zero(m, page_id, 1) };
-        call_log(2, None, &format!("Parent: zero m={:?}, page_id={:?} zero_result={:?}",  m, page_id, zero_result));
+        let pages_result = unsafe { pages(m, page_id, 1, 4) };
+        call_log(2, None, &format!("Parent: pages m={:?}, page_id={:?} pages_result={:?}",  m, page_id, pages_result));
 
         // poke(machine n, source s, dest o, # bytes z)
         let s = segment_buf.as_mut_ptr() as u64;
@@ -158,11 +159,17 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
     // invoke child VM
     let init_gas: u64 = 0x10000;
     let mut child_vm_registers = initialize_pvm_registers();
+
     child_vm_registers[7] = first_page_address;
+    call_log(2, None, &format!("Parent: first_page_address={:?}", first_page_address));
     child_vm_registers[8] = segment_index * PAGE_SIZE as u64;
+    call_log(2, None, &format!("Parent: segment_index={:?}", segment_index));
     child_vm_registers[9] = step_n as u64;
+    call_log(2, None, &format!("Parent: step_n={:?}", step_n));
     child_vm_registers[10] = num_of_gloders as u64;
+    call_log(2, None, &format!("Parent: num_of_gloders={:?}", num_of_gloders));
     child_vm_registers[11] = total_execution_steps as u64;
+    call_log(2, None, &format!("Parent: total_execution_steps={:?}", total_execution_steps));
     call_log(2, None, &format!("Parent: child_vm_registers={:?}", child_vm_registers));
 
     let g_w = serialize_gas_and_registers(init_gas, &child_vm_registers);
@@ -222,16 +229,27 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
     return (FIRST_READABLE_ADDRESS as u64, 0);
 }
 
+
+#[no_mangle]
+static mut operand: [u8; 4104] = [0u8; 4104];
+static mut output_bytes_36: [u8; 36] = [0u8; 36];
+
 #[polkavm_derive::polkavm_export]
 extern "C" fn accumulate(start_address: u64, length: u64) -> (u64, u64) {
     // parse accumulate args
-    let (_timeslot, _service_index, work_result_address, work_result_length) =
-    if let Some(args) = parse_accumulate_args(start_address, length, 0) {
-        (args.t, args.s, args.work_result_ptr, args.work_result_len)
-    } else {
-        return (FIRST_READABLE_ADDRESS as u64, 0);
+    let output_bytes_36_ptr = unsafe { output_bytes_36.as_ptr() as u64 };
+    let (_timeslot, _service_index, num_of_operands) = match parse_accumulate_args(start_address, length) {
+        Some(args) => (args.t, args.s, args.number_of_operands),
+        None => return (FIRST_READABLE_ADDRESS as u64, 0),
     };
+    // fetch 36 byte output which will be (32 byte p_u_hash + 4 byte "a" from payload y)
+    let operand_ptr = unsafe { operand.as_ptr() as u64 };
+    let operand_len = unsafe { fetch(operand_ptr, 0, 4104, 15, 0, 0) };
 
+    let (work_result_address, work_result_length) = match parse_accumulate_operand_args(operand_ptr, operand_len) {
+        Some(args) => (args.output_ptr , args.output_len ),
+        None => return (FIRST_READABLE_ADDRESS as u64, 0),
+    };
     // first time setup: do nothing but solicit code for child VM
     if work_result_length == 36 {
         let code_hash_address = work_result_address;
