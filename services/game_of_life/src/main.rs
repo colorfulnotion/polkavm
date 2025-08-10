@@ -141,6 +141,7 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
         );
 
         if segment_index == 0 {
+            call_log(2, None, &format!("Parent: first segment m={:?} page_id={:?}", m, page_id));
             first_page_address = page_id * PAGE_SIZE as u64;
         }
 
@@ -163,13 +164,9 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
     child_vm_registers[7] = first_page_address;
     call_log(2, None, &format!("Parent: first_page_address={:?}", first_page_address));
     child_vm_registers[8] = segment_index * PAGE_SIZE as u64;
-    call_log(2, None, &format!("Parent: segment_index={:?}", segment_index));
     child_vm_registers[9] = step_n as u64;
-    call_log(2, None, &format!("Parent: step_n={:?}", step_n));
     child_vm_registers[10] = num_of_gloders as u64;
-    call_log(2, None, &format!("Parent: num_of_gloders={:?}", num_of_gloders));
     child_vm_registers[11] = total_execution_steps as u64;
-    call_log(2, None, &format!("Parent: total_execution_steps={:?}", total_execution_steps));
     call_log(2, None, &format!("Parent: child_vm_registers={:?}", child_vm_registers));
 
     let g_w = serialize_gas_and_registers(init_gas, &child_vm_registers);
@@ -179,7 +176,6 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
     let mut omega_8: u64;
 
     loop {
-        call_log(2, None, &format!("Parent: invoke child VM, segment_index={:?}", segment_index));
         (invoke_result, omega_8) = unsafe { invoke(new_machine_idx as u64, g_w_address) };
         call_log(2, None, &format!("Parent: invoke {:?} invoke_result={:?} omega_8={:?}", new_machine_idx, invoke_result, omega_8));
 
