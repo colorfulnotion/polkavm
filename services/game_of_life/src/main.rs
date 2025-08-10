@@ -158,16 +158,16 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
     }
 
     // invoke child VM
-    let init_gas: u64 = 0x10000;
+    let init_gas: u64 = 0xFFFFFFF;
     let mut child_vm_registers = initialize_pvm_registers();
 
     child_vm_registers[7] = first_page_address;
-    call_log(2, None, &format!("Parent: first_page_address={:?}", first_page_address));
+    // call_log(2, None, &format!("Parent: first_page_address={:?}", first_page_address));
     child_vm_registers[8] = segment_index * PAGE_SIZE as u64;
     child_vm_registers[9] = step_n as u64;
     child_vm_registers[10] = num_of_gloders as u64;
     child_vm_registers[11] = total_execution_steps as u64;
-    call_log(2, None, &format!("Parent: child_vm_registers={:?}", child_vm_registers));
+    // call_log(2, None, &format!("Parent: child_vm_registers={:?}", child_vm_registers));
 
     let g_w = serialize_gas_and_registers(init_gas, &child_vm_registers);
     let g_w_address = g_w.as_ptr() as u64;
@@ -205,10 +205,12 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
             break;
         }
     }
+    // print all registers
+    // call_log(2, None, &format!("Parent: child_vm_registers after invoke={:?}", child_vm_registers));
 
     // peek child VM output and export it
     let output_start_address = child_vm_registers[7];
-
+    // call_log(2, None, &format!("Parent: output_start_address={:?}", output_start_address));
     for i in 0..9 {
         segment_buf.fill(0);
         segment_buf[0..4].copy_from_slice(&(new_machine_idx as u32).to_le_bytes());
