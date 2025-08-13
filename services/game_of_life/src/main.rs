@@ -4,7 +4,6 @@
 
 extern crate alloc;
 use alloc::format;
-use alloc::vec;
 
 const SIZE0 : usize = 0x100000;
 // allocate memory for stack
@@ -28,8 +27,6 @@ use utils::functions::{parse_accumulate_args,  parse_accumulate_operand_args, pa
 use utils::host_functions::{solicit};
 use utils::host_functions::{export, expunge, fetch, historical_lookup, invoke, machine, poke, peek, pages, log};
 
-static mut extrinsic : [u8; 36] = [0u8; 36];
-
 #[polkavm_derive::polkavm_export]
 extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
     let (wi_service_index, wi_payload_start_address, wi_payload_length, _wphash) =
@@ -44,29 +41,26 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
             return (FIRST_READABLE_ADDRESS as u64, 0);
         };
 
-    // fetch extrinsic
-    let extrinsic_address = unsafe {
-      extrinsic.as_mut_ptr() as u64
-      };
-    let code_hash_address = extrinsic_address;
-    let extrinsic_length = unsafe {
-      extrinsic.len() as u64
-      };
-    unsafe {
-        let _ = fetch(extrinsic_address, 0, extrinsic_length, 3, 0, 0);
+    //32 bytes code hash for child VM
+    if wi_payload_length == 36 {
+        call_log(2, None, &format!("Parent: First round setup: wi_payload_length={:?}", wi_payload_length));
+        return (wi_payload_start_address, wi_payload_length);
+    }
+    
+    // 44 bytes (32 bytes code hash + 4 bytes step_n + 4 bytes num_of_gliders + 4 bytes total_execution_steps)
+    if wi_payload_length != 44 {
+        call_log(2, None, &format!("Parent: Invalid payload length: expected 44, got {:?}", wi_payload_length));
+        return (FIRST_READABLE_ADDRESS as u64, 0);
     }
 
-    if wi_payload_length < 8 {
-        call_log(2, None, &format!("Parent: First time setup: wi_payload_length={:?}", wi_payload_length));
-        return (extrinsic_address, extrinsic_length);
-    }
+    let code_hash_address = wi_payload_start_address;
 
-    let step_n: u32 = unsafe { (*(wi_payload_start_address as *const u32)).into() };
+    let step_n: u32 = unsafe { (*((wi_payload_start_address + 32) as *const u32)).into() };
 
-    let num_of_gloders_address: u64 = wi_payload_start_address + 4;
+    let num_of_gloders_address: u64 = wi_payload_start_address + 36;
     let num_of_gloders: u32 = unsafe { (*(num_of_gloders_address as *const u32)).into() };
 
-    let total_execution_steps_address: u64 = wi_payload_start_address + 8;
+    let total_execution_steps_address: u64 = wi_payload_start_address + 40;
     let total_execution_steps: u32 = unsafe { (*(total_execution_steps_address as *const u32)).into() };
 
     // fetch child VM blob
@@ -255,6 +249,7 @@ extern "C" fn accumulate(start_address: u64, length: u64) -> (u64, u64) {
         let code_length: u64 = unsafe { (*(code_length_address as *const u32)).into() };
         unsafe { solicit(code_hash_address, code_length) };
         call_log(2, None, &format!("Parent: solicit code_hash_address={:?} code_length={:?}", code_hash_address, code_length));
+            
         return (FIRST_READABLE_ADDRESS as u64, 0);
     }
     return (FIRST_READABLE_ADDRESS as u64, 0)
