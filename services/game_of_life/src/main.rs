@@ -40,13 +40,13 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
         } else {
             return (FIRST_READABLE_ADDRESS as u64, 0);
         };
-
+    call_log(2, None, &format!("Parent: refine called with wi_service_index={:?} wi_payload_start_address={:?} wi_payload_length={:?}", 
+        wi_service_index, wi_payload_start_address, wi_payload_length));
     //32 bytes code hash for child VM
     if wi_payload_length == 36 {
         call_log(2, None, &format!("Parent: First round setup: wi_payload_length={:?}", wi_payload_length));
         return (wi_payload_start_address, wi_payload_length);
     }
-    
     // 44 bytes (32 bytes code hash + 4 bytes step_n + 4 bytes num_of_gliders + 4 bytes total_execution_steps)
     if wi_payload_length != 44 {
         call_log(2, None, &format!("Parent: Invalid payload length: expected 44, got {:?}", wi_payload_length));
@@ -62,7 +62,7 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
 
     let total_execution_steps_address: u64 = wi_payload_start_address + 40;
     let total_execution_steps: u32 = unsafe { (*(total_execution_steps_address as *const u32)).into() };
-
+    call_log(2, None, &format!("Parent: step_n={:?} num_of_gloders={:?} total_execution_steps={:?}", step_n, num_of_gloders, total_execution_steps));
     // fetch child VM blob
     let mut raw_blob = [0u8; 81920];
     let raw_blob_address = raw_blob.as_mut_ptr() as u64;
@@ -77,9 +77,9 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
         )
     };
     if raw_blob_length == NONE {
+        call_log(1, None, &format!("Parent: historical_lookup failed for service index: {:?} and code hash address: {:?}", wi_service_index, code_hash_address));
         return (FIRST_READABLE_ADDRESS as u64, 0);
     }
-
     // parse raw blob
     let (z, s, o_bytes_address, o_bytes_length, w_bytes_address, w_bytes_length, c_bytes_address, c_bytes_length) =
         if let Some(blob) = parse_standard_program_initialization_args(raw_blob_address, raw_blob_length) {
@@ -94,11 +94,11 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
                 blob.c_bytes_length,
             )
         } else {
+            call_log(1, None, &format!("Parent: parse_standard_program_initialization_args failed for raw_blob_address: {:?} raw_blob_length: {:?}", raw_blob_address, raw_blob_length));
             return (FIRST_READABLE_ADDRESS as u64, 0);
         };
     call_log(2, None, &format!("Parent: z={:?} s={:?} o_bytes_address={:?} o_bytes_length={:?} w_bytes_address={:?} w_bytes_length={:?} c_bytes_address={:?} c_bytes_length={:?}",
         z, s, o_bytes_address, o_bytes_length, w_bytes_address, w_bytes_length, c_bytes_address, c_bytes_length));
-
     // new child VM
     let new_machine_idx = unsafe { machine(c_bytes_address, c_bytes_length, 0) };
     call_log(2, None, &format!("Parent: machine new index={:?}", new_machine_idx));
@@ -113,7 +113,6 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
         w_bytes_length,
         new_machine_idx as u32,
     );
-
     // fetch segments, poke child VM
     let mut segment_buf = [0u8; SEGMENT_SIZE as usize];
     let mut segment_index = 0u64;
@@ -126,6 +125,7 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
         call_log(2, None, &format!("Parent: StartFetch"));
         let fetch_result = unsafe { fetch(segment_buf_segment_address as u64, 0, SEGMENT_SIZE as u64, 6, segment_index, 0) };
         if fetch_result == NONE {
+            call_log(2, None, &format!("Parent: fetch returned NONE, segment_index={:?}", segment_index));
             break;
         }
         call_log(2, None, &format!("Parent: fetch segment_index={:?} fetch_result={:?}", segment_index, fetch_result));
@@ -139,7 +139,7 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
             first_page_address = page_id * PAGE_SIZE as u64;
         }
 
-        let pages_result = unsafe { pages(m, page_id, 1, 4) };
+        let pages_result = unsafe { pages(m, page_id, 1, 2) };
         call_log(2, None, &format!("Parent: pages m={:?}, page_id={:?} pages_result={:?}",  m, page_id, pages_result));
 
         // poke(machine n, source s, dest o, # bytes z)
@@ -150,7 +150,6 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
 
         segment_index += 1;
     }
-
     // invoke child VM
     let init_gas: u64 = 0xFFFFFFF;
     let mut child_vm_registers = initialize_pvm_registers();
@@ -168,11 +167,9 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
 
     let mut invoke_result: u64;
     let mut omega_8: u64;
-
     loop {
         (invoke_result, omega_8) = unsafe { invoke(new_machine_idx as u64, g_w_address) };
         call_log(2, None, &format!("Parent: invoke {:?} invoke_result={:?} omega_8={:?}", new_machine_idx, invoke_result, omega_8));
-
         // only process hostlog
         if invoke_result == HOST && omega_8 == LOG {
             (_, child_vm_registers) = deserialize_gas_and_registers(&g_w);
@@ -195,13 +192,17 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
                 log(level, target_buffer_address, target_length, message_buffer_address, message_length);
             }
         } else {
-            (_, child_vm_registers) = deserialize_gas_and_registers(&g_w);
+            call_log(2, None, &format!("Parent: exiting invoke loop invoke_result={:?} omega_8={:?}", invoke_result, omega_8));
+            let mut gas;
+            (gas, child_vm_registers) = deserialize_gas_and_registers(&g_w);
+            // print the gas usage 
+            gas = init_gas - gas;
+            call_log(2, None, &format!("Parent: gas used={:?} child_vm_registers={:?}", gas, child_vm_registers));
             break;
         }
     }
     // print all registers
-    // call_log(2, None, &format!("Parent: child_vm_registers after invoke={:?}", child_vm_registers));
-
+    call_log(2, None, &format!("Parent: child_vm_registers after invoke={:?}", child_vm_registers));
     // peek child VM output and export it
     let output_start_address = child_vm_registers[7];
     // call_log(2, None, &format!("Parent: output_start_address={:?}", output_start_address));
@@ -214,9 +215,7 @@ extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
         unsafe { peek(new_machine_idx, segment_buf_page_address, page_address, PAGE_SIZE) };
         unsafe { export(segment_buf_segment_address, SEGMENT_SIZE) };
     }
-
     unsafe { expunge(new_machine_idx as u64) };
-
     call_log(2, None, &format!("Parent: done with child VM, segment_index={:?}", segment_index));
     return (FIRST_READABLE_ADDRESS as u64, 0);
 }
