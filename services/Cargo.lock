@@ -378,17 +378,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
-name = "compress"
-version = "0.1.0"
-dependencies = [
- "lzss",
- "polkavm-derive",
- "rand 0.8.5",
- "simplealloc",
- "utils",
-]
-
-[[package]]
 name = "const-hex"
 version = "1.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -406,24 +395,6 @@ name = "const-oid"
 version = "0.9.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2459377285ad874054d797f3ccebf984978aa39129f6eafde5cdc8315b612f8"
-
-[[package]]
-name = "corevm"
-version = "0.1.0"
-dependencies = [
- "polkavm-derive",
- "simplealloc",
- "utils",
-]
-
-[[package]]
-name = "corevm_child"
-version = "0.1.0"
-dependencies = [
- "polkavm-derive",
- "simplealloc",
- "utils",
-]
 
 [[package]]
 name = "cpufeatures"
@@ -667,24 +638,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "game_of_life_manifest"
-version = "0.1.0"
-dependencies = [
- "polkavm-derive",
- "simplealloc",
- "utils",
-]
-
-[[package]]
-name = "game_of_life_parent_only"
-version = "0.1.0"
-dependencies = [
- "polkavm-derive",
- "simplealloc",
- "utils",
-]
-
-[[package]]
 name = "generic-array"
 version = "0.14.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -756,16 +709,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "hello_world"
-version = "0.1.0"
-dependencies = [
- "polkavm",
- "polkavm-derive",
- "simplealloc",
- "utils",
-]
-
-[[package]]
 name = "hex"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -824,15 +767,6 @@ name = "log"
 version = "0.4.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13dc2df351e3202783a1fe0d44375f7295ffb4049267b0f3018346dc122a1d94"
-
-[[package]]
-name = "lzss"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ffcbd9e87fc27b574d4e37d4bf0d302828391f80ea3762dfce02d808fa257a01"
-dependencies = [
- "void",
-]
 
 [[package]]
 name = "megatron"
@@ -1436,15 +1370,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "transfer"
-version = "0.1.0"
-dependencies = [
- "polkavm-derive",
- "simplealloc",
- "utils",
-]
-
-[[package]]
 name = "tribonacci"
 version = "0.1.0"
 dependencies = [
@@ -1495,12 +1420,6 @@ name = "version_check"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
-
-[[package]]
-name = "void"
-version = "1.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6a02e4885ed3bc0f2de90ea6dd45ebcbb66dacffe03547fadbb0eeae2770887d"
 
 [[package]]
 name = "wasi"
