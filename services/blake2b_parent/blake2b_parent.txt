@@ -1,0 +1,26 @@
+// RO data = 0/0 bytes
+// RW data = 0/0 bytes
+// Stack size = 65536 bytes
+// RO data = []
+// RW data = []
+// Instructions = 12
+// Code size = 39 bytes
+
+      :                          @0
+     0: 28 0c 00 00 00           jump @3
+      :                          @1
+     5: 28 10 00 00 00           jump @4
+      :                          @2
+    10: 28 14                    jump @5
+      :                          @3 [export #0: 'refine']
+    12: 33 07 00 00 01           a0 = 0x10000
+    17: 33 08                    a1 = 0
+    19: 32 00                    ret
+      :                          @4 [export #1: 'accumulate']
+    21: 33 07 00 00 01           a0 = 0x10000
+    26: 33 08                    a1 = 0
+    28: 32 00                    ret
+      :                          @5 [export #2: 'on_transfer']
+    30: 33 07 00 00 01           a0 = 0x10000
+    35: 33 08                    a1 = 0
+    37: 32 00                    ret

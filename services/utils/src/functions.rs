@@ -609,6 +609,81 @@ pub fn standard_program_initialization_for_child(
     call_log(2, None, "StandardProgramInitializationForChild: success");
 }
 
+pub fn read_machine_page(
+    machine_index: u32,
+    start_page_id: u32,
+    pages_length: u64,
+    result_address: u64,
+) -> Result<(), &'static str> {
+    if length == 0 {
+        return Err("read_machine_page: length is zero");
+    }
+
+    let page_address = start_page_id as u64 * PAGE_SIZE;
+    let length = pages_length as u64 * PAGE_SIZE;
+
+    let peek_result = unsafe { peek(machine_index as u64, result_address as u64, page_address, length) };
+    if peek_result != OK {
+        return Err("read_machine_page: peek failed");
+    }
+    Ok(())
+}
+
+pub fn write_machine_page(
+    machine_index: u32,
+    start_page_id: u32,
+    pages_length: u64,
+    data_address: u64,
+    data_length: u64,
+) -> Result<(), &'static str> {
+    let expected_length = pages_length * PAGE_SIZE;
+    if data_length < expected_length {
+        return Err("write_machine_page: data buffer too small");
+    }
+
+    let page_address = start_page_id as u64 * PAGE_SIZE;
+    let length = pages_length * PAGE_SIZE;
+    // page the machine
+    let page_result = unsafe { pages(machine_index as u64, start_page_id as u64, pages_length as u64, 2) };
+    if page_result != OK {
+        return Err("write_machine_page: pages failed");
+    }
+    let poke_result = unsafe { poke(machine_index as u64, data_address, page_address, length) };
+    if poke_result != OK {
+        return Err("write_machine_page: poke failed");
+    }
+    Ok(())
+}
+
+
+pub fn copy_memory_to_another_machine(
+    z: u64,
+    s: u64,
+    o_bytes_address: u64,
+    o_bytes_length: u64,
+    w_bytes_address: u64,
+    w_bytes_length: u64,
+    machine_index: u32,
+    target_machine_index: u32,
+) -> Result<(), &'static str> {
+}
+
+
+
+pub fn copy_image_to_another_machine(
+    source_machine_index: u32,
+    target_machine_index: u32,
+    start_page_id: u32,
+    pages_length: u64,
+) -> Result<(), &'static str> {
+    if pages_length == 0 {
+        return Err("copy_image_to_another_machine: pages_length is zero");
+    }
+
+
+    
+    Ok(())
+}
 // Child VM related functions
 pub fn setup_page(segment: &[u8]) {
     if segment.len() < 8 {
