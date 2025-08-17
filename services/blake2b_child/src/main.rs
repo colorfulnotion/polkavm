@@ -45,6 +45,7 @@ extern "C" fn main() -> (u64, u64) {
     
     // log the input data
     let input_hex = bytes_to_hex(input_slice);
+    call_log(2, None, &format!("Input data: {}", input_hex));
     
     let hash_times = 100;
     let mut hash_result = [0u8; 32]; // Blake2b always returns 32 bytes
@@ -57,10 +58,13 @@ extern "C" fn main() -> (u64, u64) {
             hash_result = blake2b_hash(&hash_result);
         }
         let hash_hex = bytes_to_hex(&hash_result);
+        call_log(2, None, &format!("Hash {}: {}", i + 1, hash_hex));
     }
     
     // log the final hash result
-    let final_hash_hex = bytes_to_hex(&hash_result);    
+    let final_hash_hex = bytes_to_hex(&hash_result);
+    call_log(2, None, &format!("Final hash result: {}", final_hash_hex));
+    
     // return the address and length of the final hash result
     let result_address = hash_result.as_ptr() as u64;
     let result_length = hash_result.len() as u64;
