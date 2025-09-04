@@ -35,6 +35,7 @@ fn build_combined_input(input: &[u8], wi_payload_address: u64, wi_payload_length
 
 #[polkavm_derive::polkavm_export]
 extern "C" fn refine(start_address: u64, length: u64) -> (u64, u64) {
+polkavm_derive::sbrk(1024*1024);
     let operand_ptr = unsafe { operand.as_ptr() as u64 };
     // Datatype 8: Should be fetching 32 bytes of p_u
     let operand_len = unsafe { fetch(operand_ptr, 0, 4104, 8, 0, 0) };
@@ -89,6 +90,7 @@ static mut authorization_hashes: [u8; 32 * N_Q] = [0u8; 32 * N_Q];
 
 #[polkavm_derive::polkavm_export]
 extern "C" fn accumulate(start_address: u64, length: u64) -> (u64, u64) {
+polkavm_derive::sbrk(1024*1024);
     let output_bytes_36_ptr = unsafe { output_bytes_36.as_ptr() as u64 };
     let (_timeslot, _service_index, num_of_operands) = match parse_accumulate_args(start_address, length) {
         Some(args) => (args.t, args.s, args.number_of_operands),
