@@ -257,6 +257,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "polkavm-ffi"
+version = "0.1.0"
+dependencies = [
+ "arbitrary",
+ "polkavm-common",
+]
+
+[[package]]
 name = "polkavm-fuzz"
 version = "0.0.0"
 dependencies = [
