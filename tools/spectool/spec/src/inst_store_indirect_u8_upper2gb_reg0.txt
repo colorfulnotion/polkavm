@@ -1,0 +1,13 @@
+// Test STORE_IND_U8 with r0=0 and offset 0x80000000 (upper 2GB boundary)
+// When index register is zero, recompiler may write to RBP+0+(-2GB) instead of RBP+0+2GB
+// Should page-fault at address 0x80000000, NOT a negative address
+
+pre: a0 = 0
+pre: a1 = 0xAB
+pre: gas = 10000
+
+%rw_data_size = 0
+
+pub @main:
+pub @expected_exit:
+    u8 [a0 + 0x80000000] = a1

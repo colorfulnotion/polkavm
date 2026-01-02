@@ -1,0 +1,11 @@
+// Test LOAD_U8 with address 0x80000000 (upper 2GB boundary)
+// This tests the signed disp32 issue where recompiler may read from RBP-2GB instead of RBP+2GB
+// Should page-fault at address 0x80000000, NOT a negative address
+
+pre: gas = 10000
+
+%rw_data_size = 0
+
+pub @main:
+pub @expected_exit:
+    a0 = u8 [0x80000000]
